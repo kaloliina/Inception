@@ -11,14 +11,14 @@ all: create_dirs make_dir_up
 build: create_dirs make_dir_up_build
 
 down:
-	@docker-compose -f $(DOCKER_COMPOSE_FILE) --env-file $(ENV_FILE) down
+	@docker-compose -f $(DOCKER_COMPOSE_FILE) --env-file $(ENV_FILE) down --volumes
 
 re: down create_dirs make_dir_up_build
 
 clean: down
-	@docker system prune -a
 	@sudo rm -rf $(WORDPRESS_DATA_DIR)/*
 	@sudo rm -rf $(MARIADB_DATA_DIR)/*
+	@docker system prune -a
 
 fclean: down
 	@docker system prune --all --force --volumes

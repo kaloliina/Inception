@@ -5,7 +5,8 @@ FROM alpine:3.19.2
 RUN apk update && \
 	apk add mariadb mariadb-client bash
 
-# //Copy the executable script, we will execute this later. This command copies from the host machine the executable scrit tools mariadb entrypoint into the containers directory so we can execute it from inside the container.
+# //Copy the executable script and the server config, we will execute this later. This command copies from the host machine the executable scrit tools mariadb entrypoint into the containers directory so we can execute it from inside the container.
+COPY ../tools/mariadb-server.cnf /etc/my.cnf.d/mariadb-server.cnf
 COPY ../tools/mariadb-entrypoint.sh /usr/local/bin
 
 #//make sure its executable

@@ -1,44 +1,36 @@
 #!/bin/bash
-set -e #script exists immediately if any command exits with non-zero status
+set -e #script exits immediately if any command exits with non-zero status
 
- #creates an empty file to indicate that the first run config has been done
- #enables networking
-#server should listen to all IP addresses
- #specifies that the following lines are config settings for the MariaDB daemon
- #Appends config settings to mariadb to ensure that the mariaDB server binds to all IP addresses 0.0.0.0 and enables networking
-if [ ! -e /etc/.firstrun ]; then #if the file firstrun does not exist. If true, then this is first time container is being run
-	cat << EOF >> /etc/my.cnf.d/mariadb-server.cnf
-[mysqld]
-bind-address=0.0.0.0
-skip-networking=0
-EOF
-	touch /etc/.firstrun
-fi
- #if firstmount does not exist, indicating the db volume ins being mounted for the first time
- #initializes the db in the specified data directory with right user group settings. Output suppressed
-		#starts the Mariadb server in the background using mysqld safe. Stores the process id of the mariadb server started in the background
- #waits for the MariaDB server to start by pinging it. Output suppressed
-#uses a heredoc to pipe SQL commands to the Mariadb server
- #this reloads the privilege tables to ensure the change takes effect
+#/var/lib/mysql/ is on the volume, so the flag survives rebuilds. So if you wipe the volume, the data is lost and you need to start fresh.
 if [ ! -e /var/lib/mysql/.firstmount ]; then
+
+	#mysql_install_db configures the database settings.
+	#skip-test-db means don' create test db.
+	#--user=mysql --group=mysql means files get owned by the mysql user, not root.
+	#--auth-root-authentication-method=socket means root authenticated via Unix socket only, no password.
+	#If you are root user, you get in automatically, no password needed.
+	#/dev/null suppresses all output
 	mysql_install_db --datadir=/var/lib/mysql --skip-test-db --user=mysql --group=mysql \
 		--auth-root-authentication-method=socket >/dev/null 2>/dev/null
-		mysqld_safe &
-		mysqld_pid=$!
+	#we start a server process first in background so we can setup server details while bash is able to continue.
+	mysqld_safe &
+	#mysqladmin ping --wait just sits and waits until server is ready to accept connections before moving on.
+	mysqladmin ping -u root --silent --wait >/dev/null 2>/dev/null
 
-		mysqladmin ping -u root --silent --wait >/dev/null 2>/dev/null
-		cat << EOF | mysql --protocol=socket -u root -p= 
-CREATE DATABASE $MYSQL_DATABASE;
-CREATE USER '$MYSQL_USER'@'%' IDENTIFIED BY '$MYSQL_PASSWORD';
-GRANT ALL PRIVILEGES ON $MYSQL_DATABASE.* TO '$MYSQL_USER'@'%';
-GRANT ALL PRIVILEGES on *.* to 'root'@'%' IDENTIFIED BY '$MYSQL_ROOT_PASSWORD';
-FLUSH PRIVILEGES;
-EOF
+	#Then with the root privileges we create db settings.
+	#Create user, % means from any host, so wordpress container can connect.
+	#Grant all privileges on Database means wordpress user can do everything in wordpress db only.
+	#Allows root to connect from any host with a password.
+	#Flush tells Maria DB to reload permission tables.
+	mysql --protocol=socket -u root -p= -e "CREATE DATABASE $MYSQL_DATABASE"
+	mysql --protocol=socket -u root -p= -e "CREATE USER '$MYSQL_USER'@'%' IDENTIFIED BY '$MYSQL_PASSWORD'"
+	mysql --protocol=socket -u root -p= -e "GRANT ALL PRIVILEGES ON $MYSQL_DATABASE.* TO '$MYSQL_USER'@'%'"
+	mysql --protocol=socket -u root -p= -e "GRANT ALL PRIVILEGES on *.* to 'root'@'%' IDENTIFIED BY '$MYSQL_ROOT_PASSWORD'"
+	mysql --protocol=socket -u root -p= -e  "FLUSH PRIVILEGES"
+	#stop the server and mark volume as done. mysqladmin is a command line admin tool that sends command to running server.
 	mysqladmin shutdown
 	touch /var/lib/mysql/.firstmount
 fi
 
+#run the server again but now in foreground.
 exec mysqld_safe
- #shuts down the temporary server
-  #creates an empty file to indicate that the volume has been initialized
-  #replaces the current shell with the mysqld safe process, effectively running the MariaDB server in safe mode for better error handling

@@ -1,18 +1,21 @@
 #!/bin/bash
 set -e
+#This increases the PHP memory limit. We need to increase it because otherwise we ran into memory errors.
 echo "memory_limit = 512M" >> /etc/php82/php.ini
 cd /var/www/html
 
+#/etc is not on volume so resets on rebuild. sed-i edits the php-fpm config file, replacing 127.0.0.1 with just 9000
+#so php-fpm listens on all interfaces, allowing nginx in a separate container to reach it.
 if [ ! -e /etc/.firstrun ]; then
 	sed -i 's/listen = 127.0.0.1:9000/listen = 9000/g' /etc/php82/php-fpm.d/www.conf
 	touch /etc/.firstrun
 fi
 
-#On the first volume mount, download and configure wordpress
-#isnt this kinda done in docker compose, we dont compose wordpress until mariadb rdy..
-if [ ! -e .firstmount ]; then
-	mariadb-admin ping --protocol=tcp --host=mariadb -u "$MYSQL_USER" --password="$MYSQL_PASSWORD" --wait >/dev/null
-
+#if wordpress config already exists, skip the whole install.
+#wp core download, downloads WP core files into var/www/html. Root is needed because the script runs as root.
+#wp config creates the config file, which then tells how to connect to the database.
+#wp core install actually installs wordpress, connects to mariadb, creates all tables WordPress needs.
+#lastly we create a regular author user. This is non-admin user.
 if [ ! -f wp-config.php ]; then
 	echo "Installing Wordpress......"
 
@@ -20,7 +23,7 @@ if [ ! -f wp-config.php ]; then
 	wp config create --allow-root \
 		--dbhost=mariadb \
 		--dbuser="$MYSQL_USER" \
-		--dbpass="$MYSQL_PASSWORD" \ 
+		--dbpass="$MYSQL_PASSWORD" \
 		--dbname="$MYSQL_DATABASE"
 
 	wp core install --allow-root \
@@ -32,26 +35,13 @@ if [ ! -f wp-config.php ]; then
 		--admin_email="$WORDPRESS_ADMIN_EMAIL" \
 		--path=/var/www/html
 
-	#create regular user if it doesnt exist
-	if ! wp user get "$WORDPRESS_USER" --allow-root > /dev/null 2>&1; then
-		wp user create "$WORDPRESS_USER" "$WORDPRESS_EMAIL" --role=author --user_pass="$WORDPRESS_PASSWORD" --all
-	fi
+		wp user create "$WORDPRESS_USER" "$WORDPRESS_EMAIL" --role=author --user_pass="$WORDPRESS_PASSWORD" --allow-root
 
 else
 	echo "WordPress is already installed."
 fi
+#make wp content writable by all users. WP needs to write to this directory for uploads, theme, comments etc
 chmod o+w -R /var/www/html/wp-content
-touch .firstmount
-fi
-exec /usr/sbin/php-fpm82 -F
 
-#Checks if wp is already condigured
-#Downloads the latest WP core files. || true ensures that the scirpt continues even if the download fails (wordpress)
-#is already downloaded.... but in which scenario this would happen??
-#wp config create creates config file with db connections details
-#wp core install installs wordpress and sets up the site with the provided parameters
-#creates user if not existing
-#ensures wp-content dir is writable by all users???
-#starts the PHP-FPM service in the foreground. the exec command replaces te current shell process with the
-#php-fpm82 process, which is the main process of the containers. This ensures that the PHP FPM service is the primary
-#process running and will handle incoming PHP requests.
+#Launch PHP-FPM process on the foreground.
+exec /usr/sbin/php-fpm82 -F

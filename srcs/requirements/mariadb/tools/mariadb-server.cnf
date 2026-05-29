@@ -1,0 +1,8 @@
+#Configures MariaDB to listen on all network interfaces, not just localhost
+#My question was that shouldn't we be okay with localhost as you are connecting from the same computer but the answer is that each container has its own localhost, thus needs it.
+#Then allow networking means, we can actually answer when someone wants to reach the db.
+#[mysqld] just means "everything below this header" applies to MariaDB server process. mysqld is short for MySQL daemon. Daemon being background process.
+
+[mysqld]
+bind-address=0.0.0.0
+skip-networking=0
