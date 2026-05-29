@@ -6,35 +6,32 @@ MARIADB_DATA_DIR := $(DATA_DIR)/mariadb
 
 name = inception
 
-all: create_dirs make_dir_up
+all : build
 
-build: create_dirs make_dir_up_build
-
-down:
-	@docker-compose -f $(DOCKER_COMPOSE_FILE) --env-file $(ENV_FILE) down --volumes
-
-re: down create_dirs make_dir_up_build
-
-clean: down
-	@sudo rm -rf $(WORDPRESS_DATA_DIR)/*
-	@sudo rm -rf $(MARIADB_DATA_DIR)/*
-	@docker system prune -a
-
-fclean: down
-	@docker system prune --all --force --volumes
-	@docker network prune --force
-	@docker volume prune --force
-
-logs:
-	@docker-compose -f $(DOCKER_COMPOSE_FILE) --env-file $(ENV_FILE) logs -fclean
-
-create_dirs:
+#create dirs, build images, start containers
+build:
 	@mkdir -p $(WORDPRESS_DATA_DIR)
 	@mkdir -p $(MARIADB_DATA_DIR)
+	@docker-compose -f $(DOCKER_COMPOSE_FILE) up -d --build
 
-make_dir_up:
-	@docker-compose -f $(DOCKER_COMPOSE_FILE) --env-file $(ENV_FILE) up -d
+#start already built containers
+up:
+	@docker-compose -f $(DOCKER_COMPOSE_FILE) up -d
 
-make_dir_up_build:
-	@docker-compose -f $(DOCKER_COMPOSE_FILE) --env-file $(ENV_FILE) up -d --build
+#stop and remove containers, keep volumes and images
+down:
+	@docker-compose -f $(DOCKER_COMPOSE_FILE) down
 
+#down + remove images and containers
+clean: down
+	docker system prune -f
+
+#clean + remove volumes + data dirs
+fclean: clean
+	docker volume prune -f
+	sudo rm -rf $(DATA_DIR)
+
+#fclean + build
+re: fclean all
+
+.PHONY: all build up down clean fclean re
