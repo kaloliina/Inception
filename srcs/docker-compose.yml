@@ -24,12 +24,10 @@ services:
   mariadb:
     container_name: mariadb
     build: ./requirements/mariadb
-    image: mariadb:10.11.11
+    image: mariadb
     env_file: .env
-    ports:
-      - "3306:3306"
-    healthcheck: #super confusing how to do that?
-      test: ["CMD", "mariadb-admin", "ping", "--protocol=tcp", "--host=localhost", "-u", "$MYSQL_USER", "--password=$MYSQL_PASSWORD"]
+    healthcheck:
+      test: ["CMD-SHELL", "mariadb-admin", "ping", "--protocol=tcp", "--host=localhost", "-u", "$MYSQL_USER", "--password=$MYSQL_PASSWORD"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -42,13 +40,13 @@ services:
   wordpress:
     container_name: wordpress
     build: ./requirements/wordpress
-    image: wordpress:6.9.4 #depends what kind of version we want to build this on!
+    image: wordpress
     env_file: .env
     depends_on:
       mariadb:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "test", "-f", "/var/www/html/wp-login.php"]
+      test: ["CMD", "test", "-f", "/var/www/html/wp-config.php"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -61,7 +59,7 @@ services:
   nginx:
     container_name: nginx
     build: ./requirements/nginx
-    image: nginx:1.26.2 #???
+    image: nginx
     env_file: .env
     depends_on:
       wordpress:
