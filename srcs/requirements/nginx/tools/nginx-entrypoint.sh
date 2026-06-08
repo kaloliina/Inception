@@ -47,7 +47,7 @@ if [ ! -e /etc/.firstrun ]; then
 	#root, serve files from this dir, which is the shared volume where WordPress files live.
 	#if the request is a bare directory with no filename, index kicks in and serves index.php
 	#try to find $uri as a real file on disk (images), if found, serve it directly, if not fall back to index.php
-	#~ [^/]\.php(/|\$) matches any request URL ending in .php.
+	#~ \.php$ matches any request URL ending in .php.
 	#It then forwards it to php-fpm for execution instead of serving as static file.
 	#instead of executing PHP itself, nginx passes the request to the WordPress container's php-fpm process listening on port 9000.
 	#this is a bridge between nginx and wordpess.
@@ -72,15 +72,11 @@ server {
 		try_files \$uri /index.php?\$args;
 	}
 
-	location ~ [^/]\.php(/|\$) {
-	try_files \$fastcgi_script_name =404;
-
-	fastcgi_pass wordpress:9000;
-	fastcgi_index index.php;
-	fastcgi_param SCRIPT_FILENAME \$document_root\$fastcgi_script_name;
-	fastcgi_param PATH_INFO \$fastcgi_path_info;
-	fastcgi_split_path_info ^(.+\.php)(/.*)\$;
+	location ~ \.php$ {
 	include fastcgi_params;
+	try_files \$fastcgi_script_name =404;
+	fastcgi_pass wordpress:9000;
+	fastcgi_param SCRIPT_FILENAME \$document_root\$fastcgi_script_name;
 	}
 }
 EOF
