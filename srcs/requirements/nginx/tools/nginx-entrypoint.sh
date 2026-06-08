@@ -65,8 +65,8 @@ server {
 	ssl_protocols TLSv1.2 TLSv1.3;
 	ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384;
 
-	root /var/www/html
-	index index.php
+	root /var/www/html;
+	index index.php;
 
 	location / {
 		try_files \$uri /index.php?\$args;
@@ -78,7 +78,7 @@ server {
 	fastcgi_pass wordpress:9000;
 	fastcgi_index index.php;
 	fastcgi_param SCRIPT_FILENAME \$document_root\$fastcgi_script_name;
-	fastcgi_param PATH INFO \$fastcgi_path_info;
+	fastcgi_param PATH_INFO \$fastcgi_path_info;
 	fastcgi_split_path_info ^(.+\.php)(/.*)\$;
 	include fastcgi_params;
 	}

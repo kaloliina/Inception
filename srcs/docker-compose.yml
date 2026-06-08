@@ -27,10 +27,11 @@ services:
     image: mariadb
     env_file: .env
     healthcheck:
-      test: ["CMD-SHELL", "mariadb-admin", "ping", "--protocol=tcp", "--host=localhost", "-u", "$MYSQL_USER", "--password=$MYSQL_PASSWORD"]
-      interval: 5s
+      test: ["CMD-SHELL", "mariadb-admin ping --protocol=tcp --host=localhost -u $MYSQL_USER --password=$MYSQL_PASSWORD"]
+      interval: 10s
       timeout: 5s
-      retries: 10
+      retries: 5
+      start_period: 90s
     restart: always
     networks:
       - network
@@ -47,9 +48,9 @@ services:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "test", "-f", "/var/www/html/wp-config.php"]
-      interval: 5s
+      interval: 10s
       timeout: 5s
-      retries: 10
+      retries: 5
     restart: always
     networks:
       - network
