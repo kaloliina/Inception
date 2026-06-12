@@ -21,7 +21,7 @@ if [ ! -f wp-config.php ]; then
 
 	wp core download --allow-root
 	wp config create --allow-root \
-		--dbhost=mariadb \
+		--dbhost=mariadb:3306 \
 		--dbuser="$MYSQL_USER" \
 		--dbpass="$MYSQL_PASSWORD" \
 		--dbname="$MYSQL_DATABASE"

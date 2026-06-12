@@ -1,4 +1,4 @@
-FROM alpine:3.19.2
+FROM alpine:3.23.4
 # //Specified version of alpine. It's the base image of Docker container
 
 #//RUN command updates the Alpine package index and installs MariaDB and mariadb client tools

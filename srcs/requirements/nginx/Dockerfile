@@ -1,4 +1,4 @@
-FROM alpine:3.19.2
+FROM alpine:3.23.4
 ##Specified version of alpine. It's the base image of Docker container
 
 # #Install nginx, openssl and bash. OpenSSL isfor handling SSL/TLS. Bash for shell scripting..

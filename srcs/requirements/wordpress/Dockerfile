@@ -1,4 +1,4 @@
-from alpine:3.19.2
+FROM alpine:3.23.4
 
 #installs bash, curl (to transfer data from or to a server), mariadb client to interact with db
 #icu-data-full international components for Unicode data handling internationalization
