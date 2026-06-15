@@ -4,13 +4,13 @@ FROM alpine:3.23.4
 #icu-data-full international components for Unicode data handling internationalization
 #ghostscript and imamagic tools for processing and converting image formats
 #openssl a toolkit for SSL/TLS and general cryptography
-#php82 . Provide PHP version 8.2 and its various modules, essential for running WordPress and interacting with dbs, files
+#php84 . Provide PHP version 8.2 and its various modules, essential for running WordPress and interacting with dbs, files
 RUN apk update && apk add bash curl mariadb-client icu-data-full ghostscript \
-        imagemagick openssl php82 php82-fpm php82-phar php82-json php82-mysqli \
-        php82-curl php82-dom php82-exif php82-fileinfo php82-pecl-igbinary \
-        php82-pecl-imagick php82-intl php82-mbstring php82-openssl \
-        php82-xml php82-zip php82-iconv php82-shmop php82-simplexml php82-sodium \
-        php82-xmlreader php82-zlib php82-tokenizer
+        imagemagick openssl php84 php84-fpm php84-phar php84-json php84-mysqli \
+        php84-curl php84-dom php84-exif php84-fileinfo php84-pecl-igbinary \
+        php84-pecl-imagick php84-intl php84-mbstring php84-openssl \
+        php84-xml php84-zip php84-iconv php84-shmop php84-simplexml php84-sodium \
+        php84-xmlreader php84-zlib php84-tokenizer
 
 #Downloads the WP-CLI (WordPress command line interface() tool from the official source. WP-CLI is a commandline tool
 #for managing WordPress installations

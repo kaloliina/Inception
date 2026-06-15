@@ -1,13 +1,13 @@
 #!/bin/bash
 set -e
 #This increases the PHP memory limit. We need to increase it because otherwise we ran into memory errors.
-echo "memory_limit = 512M" >> /etc/php82/php.ini
+echo "memory_limit = 512M" >> /etc/php84/php.ini
 cd /var/www/html
 
 #/etc is not on volume so resets on rebuild. sed-i edits the php-fpm config file, replacing 127.0.0.1 with just 9000
 #so php-fpm listens on all interfaces, allowing nginx in a separate container to reach it.
 if [ ! -e /etc/.firstrun ]; then
-	sed -i 's/listen = 127.0.0.1:9000/listen = 9000/g' /etc/php82/php-fpm.d/www.conf
+	sed -i 's/listen = 127.0.0.1:9000/listen = 9000/g' /etc/php84/php-fpm.d/www.conf
 	touch /etc/.firstrun
 fi
 
@@ -44,4 +44,4 @@ fi
 chmod o+w -R /var/www/html/wp-content
 
 #Launch PHP-FPM process on the foreground.
-exec /usr/sbin/php-fpm82 -F
+exec php-fpm84 -F
