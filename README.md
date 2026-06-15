@@ -1,4 +1,4 @@
-This project has been created as part of the 42 curriculum by khiidenh.
+*This project has been created as part of the 42 curriculum by khiidenh.*
 
 Description:
 This project is part of the 42 curriculum. The goal is to set up a running WordPress website using Docker, where each
