@@ -27,7 +27,7 @@ services:
     image: mariadb
     env_file: .env
     healthcheck:
-      test: ["CMD-SHELL", "mariadb-admin ping --protocol=tcp --host=localhost -u $MYSQL_USER --password=$MYSQL_PASSWORD"]
+      test: ["CMD-SHELL", "mariadb-admin ping -u $MYSQL_USER --password=$MYSQL_PASSWORD"]
       interval: 10s
       timeout: 5s
       retries: 5
