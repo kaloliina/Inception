@@ -1,30 +1,17 @@
 #!/bin/bash
 
 #nginx is a web server, its job is to receive HTTP requests from browser and return responses.
-#PHP - WordPress is written in PHP - Programming language that runs on the server.
-#Unlike HTML, which is just static text, PHP is code that executes and generates HTML dynamically
-#So when you request a page, it's not prewritten but instead PHP code runs, queries db, builds HTML, returns.
-#nginx cannot execute PHP files itself. Nginx only serves static files.
-
-#PHP-FPM is a separate process that executes PHP code. FPM stands for FastCGI Process Manager
-#Nginx handles HTTP, serves static files.. php-fpm executes PHP code and returns the result to nginx.
-#They talk to each other via FastCGI.
-
-#SSL/TLS are the same thing. It's the encryption layer that sits on top of HTTP, turning it into HTTPS.
-#Without it data travels as plain readable text. With it, everything is encrypted.
-#Browser -> Server "I want to connect"
-#Server -> Browser "Here is my certificate"
-#Browser: checks if cert is trusted
-#Browser -> Server "Ok, here is a session key encrypted with your public key"
-#Server: Decrypts the session key with its private key
-#Both: Now share a secret session key nobody else knows
+#it cannot execute PHP itself, instead it forwards PHP requests to php-fpm.
+#php-fpm executes WordPress PHP code and returns HTML to nginx. They talk to each other with FastCGI.
+#SSL/TLS encrypts the connection between browser and server (HTTP/HTTPS)
+#certificates proves server identity and contains the public key for encryption. It works like a handshake process.
 
 set -e
 
 #On the first container run, generate a certificate and configure the server.
 if [ ! -e /etc/.firstrun ]; then
-#Generate a self-signed certificate for HTTPS. (what does this REALLY mean)
-#req -x509. Create a self signed certificate.
+#Generate a self-signed certificate.
+#req -x509. Create a self signed certificate. (Not by a trusted authority!)
 #days is how long it's valid.
 #-newkey rsa:2048, generate a new public/private key pair using RSA algo, 2048 bits long.
 #-nodes means don't password protect the private key so nginx can start without additional input.
@@ -37,23 +24,26 @@ if [ ! -e /etc/.firstrun ]; then
 	-subj "/CN=$DOMAIN_NAME" \
 	>/dev/null 2>/dev/null
 
-	#append the nginx configuration to the config file.
-	#listen on port 443 (HTTPS) on both IPv4 and IPv6. Http2 enables a protocol which can send multiple requests over one connection.
-	#server name: nginx only responds to requests for this domain
-	#tells nginx where the certificate and private key are.
-	#When a browser connects, nginx shows it the certificate to prove its identity, then uses private k to decrypt.
-	#only allow modern versions of TLS.
-	#cipher is a specific encryption algorithm.
-	#root, serve files from this dir, which is the shared volume where WordPress files live.
-	#if the request is a bare directory with no filename, index kicks in and serves index.php
-	#try to find $uri as a real file on disk (images), if found, serve it directly, if not fall back to index.php
-	#~ \.php$ matches any request URL ending in .php.
-	#It then forwards it to php-fpm for execution instead of serving as static file.
-	#instead of executing PHP itself, nginx passes the request to the WordPress container's php-fpm process listening on port 9000.
-	#this is a bridge between nginx and wordpess.
-	#tells php-fpm the full path of the PHP file to execute. Without this, php-fpm wouldn't know which file to run.
-	#splits the URL into the PHP file part and any extra path info after it.  /index.php/some/path becomes /index.php and /some/path
-	#includes a standard set of variables that php fpm needs. things like request method GET/POST.
+	#append nginx server config to config file.
+	#listen on port 443.
+	#$DOMAIN_NAME says only respond to requests for this domain.
+	#ceriticate: shown to browsers to prove identity
+	#private key: used to decrypt incoming session key.
+	#secure TLS versions (others are outdated)
+	#use strong encryption algorithms only.
+
+	#serve files from shared volume where WP lives.
+	#for bare directory requests, serve index.php (https://khiidenh.42.fr/)
+	#for all requests:
+	#1. try to find as real file (images etc) -> serve directly
+	#2. try as directory -> find index.php inside it (/wp-admin example turns into wp-admin/index.php)
+	#3. nothing found -> hand to WordPress via index.php?args=about
+	#for requests ending in .php
+	#nginx cannot execute PHP so forward to php-fpm in wp container
+	#fastcgi params are variables that php-fpm needs
+	#return 404 if php file not found
+	#send to php-fpm (wordpress container)
+	#tell which file to execute
 	cat << EOF >> /etc/nginx/http.d/default.conf
 server {
 	listen 443 ssl http2;
