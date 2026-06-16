@@ -1,5 +1,4 @@
 DOCKER_COMPOSE_FILE := ./srcs/docker-compose.yml
-ENV_FILE := ./srcs/.env
 DATA_DIR := $(HOME)/data
 WORDPRESS_DATA_DIR := $(DATA_DIR)/wordpress
 MARIADB_DATA_DIR := $(DATA_DIR)/mariadb
@@ -28,7 +27,7 @@ clean: down
 
 #clean + remove volumes + data dirs
 fclean: clean
-	docker volume prune -f
+	docker system prune -af --volumes
 	sudo rm -rf $(DATA_DIR)
 
 #fclean + build
