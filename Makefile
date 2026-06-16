@@ -27,6 +27,7 @@ clean: down
 
 #clean + remove volumes + data dirs
 fclean: clean
+	docker volume rm mariadb wordpress
 	docker system prune -af --volumes
 	sudo rm -rf $(DATA_DIR)
 
